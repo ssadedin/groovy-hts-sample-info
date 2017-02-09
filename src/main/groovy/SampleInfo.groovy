@@ -274,8 +274,8 @@ class SampleInfo {
     }
 
     static List<String> readSampleInfoLines(String fileName) {
-        String simpleCol0 = SIMPLE_COLUMNS[0].toLowerCase()
-        String mgCol0 = MG_COLUMNS[0].toLowerCase()
+        String simpleCol0 = SIMPLE_COLUMNS[0].toLowerCase()+"\t"
+        String mgCol0 = MG_COLUMNS[0].toLowerCase() + "\t"
         new File(fileName).readLines().grep {
             !it.trim().startsWith('#') && // ignore comment lines
                     !it.trim().toLowerCase().startsWith(simpleCol0) && // ignore header line, if it is present
