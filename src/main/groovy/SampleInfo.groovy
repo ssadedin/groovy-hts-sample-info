@@ -23,12 +23,13 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+import java.lang.ref.ReferenceQueue.Null
 import java.text.ParseException
 
-import org.broadinstitute.variant.vcf.VCFFileReader
-import org.broadinstitute.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFFileReader
+import htsjdk.variant.vcf.VCFHeader;
 
-import net.sf.samtools.SAMFileReader
+import htsjdk.samtools.SAMFileReader
 
 import com.xlson.groovycsv.CsvIterator;
 import com.xlson.groovycsv.CsvParser;
@@ -55,7 +56,33 @@ class SampleInfo {
      */
     Map    files = new Hashtable() // thread safe
 	
-	static List<String> SIMPLE_COLUMNS = ["Sample_ID","Batch","Cohort","Fastq_Files","Prioritised_Genes","Sex","Sample_Type","Consanguinity","Variants_File","Pedigree_File","Ethnicity","VariantCall_Group","DNA_Concentration","DNA_Volume","DNA_Quantity","DNA_Quality","DNA_Date","Capture_Date","Sequencing_Date","Mean_Coverage","Duplicate_Percentage","Machine_ID","Hospital_Centre","Sequencing_Contact","Pipeline_Contact","Notes"]
+	static List<String> SIMPLE_COLUMNS = [
+        "Sample_ID",
+        "Batch",
+        "Cohort",
+        "Fastq_Files",
+        "Prioritised_Genes",
+        "Sex",
+        "Sample_Type",
+        "Consanguinity",
+        "Variants_File",
+        "Pedigree_File",
+        "Ethnicity",
+        "VariantCall_Group",
+        "DNA_Concentration",
+        "DNA_Volume",
+        "DNA_Quantity",
+        "DNA_Quality",
+        "DNA_Date",
+        "Capture_Date",
+        "Sequencing_Date",
+        "Mean_Coverage",
+        "Duplicate_Percentage",
+        "Machine_ID",
+        "Hospital_Centre",
+        "Sequencing_Contact",
+        "Pipeline_Contact",
+        "Notes"]
     
     /**
      * MGHA redefined column order and contents to have a lot of things not of interest to others,
@@ -64,7 +91,8 @@ class SampleInfo {
     static List<String> MG_COLUMNS = [
 		"Batch","Sample_ID","DNA_ID","Sex","DNA_Concentration","DNA_Volume","DNA_Quantity","DNA_Quality","DNA_Date","Cohort","Sample_Type",
         "Fastq_Files","Prioritised_Genes","Consanguinity","Variants_File",
-        "Pedigree_File","Ethnicity","VariantCall_Group","Capture_Date","Sequencing_Date","Mean_Coverage","Duplicate_Percentage","Machine_ID",
+        "Pedigree_File",
+        "Ethnicity","VariantCall_Group","Capture_Date","Sequencing_Date","Mean_Coverage","Duplicate_Percentage","Machine_ID",
         "DNA_Extraction_Lab","Sequencing_Lab","Library_Preparation","Barcode_Pool_Size","Read_Type","Machine_Type","Sequencing_Chemistry",
         "Sequencing_Software","Demultiplex_Software","Hospital_Centre",
         "Hospital_Centre","Sequencing_Contact","Pipeline_Contact","Notes"
@@ -148,8 +176,9 @@ class SampleInfo {
      * @param fileName
      * @return
      */
-    static parse_mg_sample_info(fileName) {
-        parse_sample_info(fileName, MG_COLUMNS)
+    static Map<String,SampleInfo> parse_mg_sample_info(String fileName) {
+        println "Parsing MG Sample info"
+        SampleInfo.parse_sample_info(fileName, MG_COLUMNS)
     }
     
     /**
@@ -158,7 +187,8 @@ class SampleInfo {
      * @param fileName
      * @return
      */
-    static parse_sample_info(String fileName) {
+    static Map<String,SampleInfo> parse_sample_info(String fileName) {
+        
         // We just read the first line and sniff the values
         List lines = readSampleInfoLines(fileName)
         if(lines.isEmpty())
@@ -189,12 +219,11 @@ class SampleInfo {
      *              <li>Name of flagship (target)
      *              <li>Genes to be classed as high priority (genes)
      */
-    static parse_sample_info(fileName, columns) {
+    static Map<String,SampleInfo> parse_sample_info(String fileName, List columns) {
         
         String col0 = columns[0].toLowerCase()
 
         def lines = readSampleInfoLines(fileName)
-
 
         // Pad with optional blank fields
         lines = lines.collect { line ->
@@ -297,7 +326,18 @@ class SampleInfo {
             throw new IllegalStateException("Sample ID ${batch} does not match prescribed format")
     }
 
-    String toTsv() {
+    /**
+     * Return a tab separated string compatible with the samples.txt file format, 
+     * containing the details for this sample.
+     * <p>
+     * 
+     * @param father    optional father id, if provided, will be output into the pedigree field
+     * @param mother    optional mother id, if provided, will be output into the pedigree field
+     * 
+     * @return
+     */
+    String toTsv(List<String> columns = SIMPLE_COLUMNS, String father=null, String mother=null) {
+        /*
         [
             sample,
             batch,
@@ -306,6 +346,26 @@ class SampleInfo {
             geneCategories.collect { it.key + ":" + it.value.join(",") }.join(" "),
             sex.encode()
         ].join("\t")
+        */
+        def mappings = [
+       		"Batch" : { batch },
+            "Sample_ID" : { sample },
+            "Sex": { sex.encode() },
+            "Cohort" : { target },
+            "Fastq_Files": { files.collect { it.key == "all" ? [] : it.value }.flatten().join(",")},
+            "Pedigree_File" : { 
+                if(mother != null && father != null)  {
+                    "familyID=$father,$mother"
+                }
+                else {
+                    ""
+                }
+             }
+        ]
+        
+        return columns.collect { key ->
+            key in mappings ? mappings[key]() : ""
+        }.join("\t")
     }
 
     String toString() {
