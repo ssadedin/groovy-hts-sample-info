@@ -22,7 +22,7 @@ dependencies {
      compile group: 'org.codehaus.groovy', name: 'groovy-json', version: "$GROOVY_VERSION"
      compile group: 'org.codehaus.groovy', name: 'groovy-sql', version: "$GROOVY_VERSION"
      compile group: 'org.apache.ivy', name:'ivy', version:'2.2.0' 
-     compile 'org.utgenome.thirdparty:picard:1.102.0'
+//      compile 'org.utgenome.thirdparty:picard:1.102.0'
      compile 'com.xlson.groovycsv:groovycsv:1.0'
      compile files(fileTree(dir:'lib', includes:['*.jar']))
 }
