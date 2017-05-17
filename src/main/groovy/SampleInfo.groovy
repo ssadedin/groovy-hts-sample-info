@@ -381,7 +381,7 @@ class SampleInfo {
      */
     static Map<String,SampleInfo> fromFiles(List<String> files, String mask=null) {
         // Convert to absolute path
-        files = files.collect { new File(it).canonicalFile.absolutePath }
+        files = files.collect { new File(it).absolutePath }
         def collectBySample = { ext, extractSample ->
 
             def sampleExtracter = extractSample
