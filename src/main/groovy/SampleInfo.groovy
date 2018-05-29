@@ -23,13 +23,14 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-import java.lang.ref.ReferenceQueue.Null
 import java.text.ParseException
 
 import htsjdk.variant.vcf.VCFFileReader
 import htsjdk.variant.vcf.VCFHeader;
 
-import htsjdk.samtools.SAMFileReader
+import htsjdk.samtools.SamReader
+import htsjdk.samtools.SamReaderFactory
+import htsjdk.samtools.ValidationStringency
 
 import com.xlson.groovycsv.CsvIterator;
 import com.xlson.groovycsv.CsvParser;
@@ -177,7 +178,6 @@ class SampleInfo {
      * @return
      */
     static Map<String,SampleInfo> parse_mg_sample_info(String fileName) {
-        println "Parsing MG Sample info"
         SampleInfo.parse_sample_info(fileName, MG_COLUMNS)
     }
     
@@ -199,7 +199,7 @@ class SampleInfo {
         int columns = line0.size()
         
         if(columns == MG_COLUMNS.size())
-            return parse_sample_info(fileName, MG_COLUMNS)
+            return parse_mg_sample_info(fileName, MG_COLUMNS)
         else
         if(columns >= 5 && columns <= SIMPLE_COLUMNS.size())
             return parse_sample_info(fileName, SIMPLE_COLUMNS)
@@ -457,7 +457,11 @@ class SampleInfo {
     }
     
     static List<String> getBAMSamples(String fileName) {
-        SAMFileReader bam = new SAMFileReader(new File(fileName))
+        SamReaderFactory samReaderFactory =
+                SamReaderFactory.makeDefault()
+                .validationStringency(ValidationStringency.SILENT)
+
+        SamReader bam = samReaderFactory.open(new File(fileName))
         try {
             bam.getFileHeader().getReadGroups()*.sample
         }
