@@ -32,11 +32,15 @@ enum Sex {
             2 : FEMALE,
             "1" : MALE,
             "2" : FEMALE,
+            "male" : MALE,
             "MALE" : MALE,
+            "female": FEMALE,
             "FEMALE": FEMALE,
             "Male" : MALE,
             "Female": FEMALE,
-           "Unknown" : UNKNOWN,
+            "Unknown" : UNKNOWN, 
+            "UNKNOWN" : UNKNOWN,
+            "unknown" : UNKNOWN,
             "other" : UNKNOWN // ped file compatibility
     ]
     
